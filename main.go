@@ -1,17 +1,26 @@
 package main
 
 import (
+  "log"
   "net/http"
   "github.com/gin-gonic/gin"
+   "github.com/joho/godotenv"
 )
 
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error: Cannot load .env file")
+	}
+}
+
 func main() {
-	print("hello world")
-  r := gin.Default()
-  r.GET("/ping", func(c *gin.Context) {
+  print("hello world")
+  engine := gin.Default()
+  engine.GET("/", func(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
-      "message": "pong",
+      "message": "hello world",
     })
   })
-  r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+  engine.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
