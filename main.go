@@ -1,21 +1,20 @@
 package main
 
 import (
-  "log"
-  "net/http"
-  "github.com/gin-gonic/gin"
-   "github.com/joho/godotenv"
+	"log"
+	"net/http"
+	"rest_api/config"
+	"github.com/gin-gonic/gin"
 )
 
+var logger = log.Default()
+
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error: Cannot load .env file")
-	}
+	config.LoadEnvVars()
 }
 
 func main() {
-  print("hello world")
+  logger.Println("hello world")
   engine := gin.Default()
   engine.GET("/", func(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{

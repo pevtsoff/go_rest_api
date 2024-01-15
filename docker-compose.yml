@@ -1,0 +1,35 @@
+version: '3.8'
+
+
+services:
+
+  app:
+    image: golang:1.21.6-alpine
+    working_dir: /usr/src/app/
+    #command: "go version"
+    command: sh -c "./wait-for postgres:5432 && go build && go run main.go"
+    container_name: app-${TAG}
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+    hostname: app
+    volumes:
+      - ./:/usr/src/app
+
+  postgres:
+    container_name: postgres-${TAG}
+    hostname: postgres
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    restart: on-failure
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data  
+
+volumes:
+  postgresql-data:
