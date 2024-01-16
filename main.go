@@ -2,8 +2,9 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"rest_api/config"
+	"rest_api/controllers"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,10 +18,6 @@ func init() {
 func main() {
   logger.Println("hello world")
   engine := gin.Default()
-  engine.GET("/", func(c *gin.Context) {
-    c.JSON(http.StatusOK, gin.H{
-      "message": "hello world",
-    })
-  })
+  engine.POST("/posts/", controllers.PostsCreate)
   engine.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
