@@ -11,6 +11,7 @@ var logger = log.Default()
 
 func init() {
 	config.LoadEnvVars()
+  config.ConnectToDB()
 }
 
 func main() {
