@@ -19,5 +19,7 @@ func main() {
   logger.Println("hello world")
   engine := gin.Default()
   engine.POST("/posts/", controllers.PostsCreate)
+  engine.GET("/posts/", controllers.PostsIndex)
+  engine.GET("/posts/:id", controllers.PostsShow)
   engine.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
