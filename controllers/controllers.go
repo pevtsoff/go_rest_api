@@ -84,3 +84,21 @@ func PostsUpdate(c *gin.Context){
 		"post": post,
 	})
 }
+
+
+func PostsDelete(c *gin.Context){
+	var post  models.Post
+    result := config.DB.First(&post, c.Param("id"))
+
+	if result.Error !=nil {
+		c.Status(400)
+		return
+	}
+
+	config.DB.Model(&post).Delete(&post)
+	
+	c.JSON(
+	200, gin.H{
+		"id has been deleted": c.Param("id"),
+	})
+}
