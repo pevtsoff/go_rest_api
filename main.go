@@ -21,5 +21,6 @@ func main() {
   engine.POST("/posts/", controllers.PostsCreate)
   engine.GET("/posts/", controllers.PostsIndex)
   engine.GET("/posts/:id", controllers.PostsShow)
+  engine.PATCH("/posts/:id", controllers.PostsUpdate)
   engine.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }

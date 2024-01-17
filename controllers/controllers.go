@@ -53,3 +53,34 @@ func PostsShow(c *gin.Context){
 		"post": post,
 	})
 }
+
+
+func PostsUpdate(c *gin.Context){
+	var body struct{
+		Title string
+		Body string
+	}
+	err := c.Bind(&body)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	var post  models.Post
+    result := config.DB.First(&post, c.Param("id"))
+
+	if result.Error !=nil {
+		c.Status(400)
+		return
+	}
+
+	config.DB.Model(&post).Updates(models.Post{
+		Title: body.Title,
+		Body: body.Body,
+	})
+	
+	c.JSON(
+	200, gin.H{
+		"post": post,
+	})
+}
