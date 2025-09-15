@@ -23,9 +23,21 @@ func init() {
 	log.Println("Database migration completed successfully!")
 }
 
+func JSONErrorMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+		if len(c.Errors) > 0 {
+			c.AbortWithStatusJSON(c.Writer.Status(), gin.H{
+				"error": c.Errors[0].Error(),
+			})
+		}
+	}
+}
+
 func main() {
 	logger.Println("hello world")
 	engine := gin.Default()
+	engine.Use(JSONErrorMiddleware())
 	engine.POST("/users/", controllers.UsersCreate)
 	engine.GET("/users/:id", controllers.UsersShow)
 	engine.POST("/posts/", controllers.PostsCreate)

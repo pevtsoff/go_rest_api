@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"rest_api/config"
 	"rest_api/models"
 
@@ -73,7 +74,7 @@ func PostsUpdate(c *gin.Context) {
 	result := config.DB.First(&post, c.Param("id"))
 
 	if result.Error != nil {
-		c.Status(400)
+		c.Error(errors.New("Unable to update a post"))
 		return
 	}
 
@@ -93,7 +94,7 @@ func PostsDelete(c *gin.Context) {
 	result := config.DB.First(&post, c.Param("id"))
 
 	if result.Error != nil {
-		c.Status(400)
+		c.Error(errors.New("Unable to delete a post"))
 		return
 	}
 
@@ -111,7 +112,7 @@ func UsersCreate(c *gin.Context) {
 	}
 	err := c.Bind(&body)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.Error(errors.New(err.Error()))
 		return
 	}
 
@@ -135,7 +136,7 @@ func UsersShow(c *gin.Context) {
 	result := config.DB.First(&user, id)
 
 	if result.Error != nil {
-		c.JSON(404, gin.H{"error": "User not found"})
+		c.Error(errors.New("User not found"))
 		return
 	}
 
