@@ -8,8 +8,7 @@ import (
 	"rest_api/models"
 )
 
-
-func printEnvVars(){
+func printEnvVars() {
 	envVars := os.Environ()
 
 	for _, envVar := range envVars {
@@ -17,16 +16,23 @@ func printEnvVars(){
 	}
 }
 
-func init(){
+func init() {
 	config.LoadEnvVars()
 	printEnvVars()
 	config.ConnectToDB()
 }
 
-
-func main(){
+func main() {
 	if config.DB != nil {
-		config.DB.AutoMigrate(&models.Post{})
+		log.Println("Starting database migration...")
+
+		// Auto-migrate all your models
+		err := config.DB.AutoMigrate(&models.Post{}, &models.User{})
+		if err != nil {
+			log.Fatal("Migration failed:", err)
+		}
+
+		log.Println("Database migration completed successfully!")
 	} else {
 		log.Fatal("config.DB is nil")
 	}
