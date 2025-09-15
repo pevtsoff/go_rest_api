@@ -104,3 +104,43 @@ func PostsDelete(c *gin.Context) {
 			"id has been deleted": c.Param("id"),
 		})
 }
+
+func UsersCreate(c *gin.Context) {
+	var body struct {
+		name string
+	}
+	err := c.Bind(&body)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	user := models.User{Name: body.name}
+	result := config.DB.Create(&user)
+
+	if result.Error != nil {
+		c.Status(400)
+		return
+	}
+
+	c.JSON(
+		200, gin.H{
+			"user": user,
+		})
+}
+
+func UsersShow(c *gin.Context) {
+	var user models.User
+	id := c.Param("id")
+	result := config.DB.First(&user, id)
+
+	if result.Error != nil {
+		c.JSON(404, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(
+		200, gin.H{
+			"post": user,
+		})
+}

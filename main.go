@@ -26,6 +26,8 @@ func init() {
 func main() {
 	logger.Println("hello world")
 	engine := gin.Default()
+	engine.POST("/users/", controllers.UsersCreate)
+	engine.GET("/users/:id", controllers.UsersShow)
 	engine.POST("/posts/", controllers.PostsCreate)
 	engine.GET("/posts/", controllers.PostsIndex)
 	engine.GET("/posts/:id", controllers.PostsShow)
