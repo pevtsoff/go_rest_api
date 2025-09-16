@@ -4,6 +4,8 @@ import (
 	"errors"
 	"rest_api/config"
 	"rest_api/models"
+	"time"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -63,6 +65,39 @@ type UserResponse struct {
 	User User `json:"user"`
 }
 
+// mapPost converts DB model to API DTO
+func mapPost(m models.Post) Post {
+	var deletedAt *string
+	if m.DeletedAt.Valid {
+		s := m.DeletedAt.Time.Format(time.RFC3339)
+		deletedAt = &s
+	}
+	return Post{
+		ID:        m.ID,
+		CreatedAt: m.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: m.UpdatedAt.Format(time.RFC3339),
+		DeletedAt: deletedAt,
+		Title:     m.Title,
+		Body:      m.Body,
+	}
+}
+
+// mapUser converts DB model to API DTO
+func mapUser(m models.User) User {
+	var deletedAt *string
+	if m.DeletedAt.Valid {
+		s := m.DeletedAt.Time.Format(time.RFC3339)
+		deletedAt = &s
+	}
+	return User{
+		ID:        m.ID,
+		CreatedAt: m.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: m.UpdatedAt.Format(time.RFC3339),
+		DeletedAt: deletedAt,
+		Name:      m.Name,
+	}
+}
+
 // PostsCreate godoc
 // @Summary Create a new post
 // @Description Create a new blog post
@@ -91,7 +126,7 @@ func PostsCreate(c *gin.Context) {
 
 	c.JSON(
 		200, gin.H{
-			"post": post,
+			"post": mapPost(post),
 		})
 }
 
@@ -108,7 +143,13 @@ func PostsIndex(c *gin.Context) {
 
 	c.JSON(
 		200, gin.H{
-			"post": posts,
+			"posts": func() []Post {
+				dtos := make([]Post, 0, len(posts))
+				for _, p := range posts {
+					dtos = append(dtos, mapPost(p))
+				}
+				return dtos
+			}(),
 		})
 }
 
@@ -133,7 +174,7 @@ func PostsShow(c *gin.Context) {
 
 	c.JSON(
 		200, gin.H{
-			"post": post,
+			"post": mapPost(post),
 		})
 }
 
@@ -172,7 +213,7 @@ func PostsUpdate(c *gin.Context) {
 
 	c.JSON(
 		200, gin.H{
-			"post": post,
+			"post": mapPost(post),
 		})
 }
 
@@ -230,7 +271,7 @@ func UsersCreate(c *gin.Context) {
 
 	c.JSON(
 		200, gin.H{
-			"user": user,
+			"user": mapUser(user),
 		})
 }
 
@@ -255,6 +296,6 @@ func UsersShow(c *gin.Context) {
 
 	c.JSON(
 		200, gin.H{
-			"user": user,
+			"user": mapUser(user),
 		})
 }
