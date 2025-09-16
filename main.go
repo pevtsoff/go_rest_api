@@ -1,16 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
+	"net/http"
+	"os"
 	"rest_api/config"
 	"rest_api/controllers"
 	"rest_api/models"
 
-	_ "rest_api/docs" // This is required for swagger to work
-
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/swag"
 )
 
 var logger = log.Default()
@@ -57,8 +59,23 @@ func main() {
 	engine := gin.Default()
 	engine.Use(JSONErrorMiddleware())
 
-	// Swagger documentation endpoint
-	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Generate Swagger JSON at startup from annotations (no local docs folder)
+	swaggerJSON, genErr := generateSwaggerJSON()
+	if genErr != nil {
+		logger.Printf("warning: failed to generate swagger: %v", genErr)
+	}
+
+	// Serve the generated Swagger JSON from memory
+	engine.GET("/openapi.json", func(c *gin.Context) {
+		if swaggerJSON == nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "swagger not available"})
+			return
+		}
+		c.Data(http.StatusOK, "application/json", swaggerJSON)
+	})
+
+	// Serve Swagger UI pointing to the local generated spec
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/openapi.json")))
 
 	// API routes
 	engine.POST("/users/", controllers.UsersCreate)
@@ -70,4 +87,23 @@ func main() {
 	engine.DELETE("/posts/:id", controllers.PostsDelete)
 
 	engine.Run(":3000") // listen and serve on localhost:3000
+}
+
+// generateSwaggerJSON builds the OpenAPI spec from code annotations at runtime.
+func generateSwaggerJSON() ([]byte, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	parser := swag.New(
+		swag.SetParseDependency(int(swag.ParseAll)),
+		swag.ParseUsingGoList(true),
+		swag.SetStrict(false),
+	)
+	if err := parser.ParseAPIMultiSearchDir([]string{wd}, "main.go", 1); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(parser.GetSwagger())
 }
