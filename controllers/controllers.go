@@ -4,7 +4,6 @@ import (
 	"errors"
 	"rest_api/config"
 	"rest_api/models"
-
 	"github.com/gin-gonic/gin"
 )
 
