@@ -5,7 +5,6 @@ import (
 	"rest_api/config"
 	"rest_api/models"
 	"time"
-
 	"github.com/gin-gonic/gin"
 )
 
