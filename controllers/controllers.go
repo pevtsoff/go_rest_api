@@ -175,7 +175,7 @@ func PostsUpdate(c *gin.Context) {
 
 	if result.Error != nil {
 		c.Error(errors.New("Unable to update a post"))
-		c.Status(http.StatusBadRequest)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
