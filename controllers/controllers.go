@@ -2,13 +2,13 @@ package controllers
 
 import (
 	"errors"
+	"net/http"
 	"rest_api/config"
 	"rest_api/models"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
-
 
 // CreatePostRequest represents the request body for creating a post
 type CreatePostRequest struct {
@@ -142,7 +142,8 @@ func PostsShow(c *gin.Context) {
 	result := config.DB.First(&post, id)
 
 	if result.Error != nil {
-		c.JSON(404, gin.H{"error": "Post not found"})
+		c.Error(errors.New("Unable to find a post"))
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -165,7 +166,7 @@ func PostsUpdate(c *gin.Context) {
 	var body UpdatePostRequest
 	err := c.Bind(&body)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.Error(errors.New(err.Error()))
 		return
 	}
 
@@ -174,6 +175,7 @@ func PostsUpdate(c *gin.Context) {
 
 	if result.Error != nil {
 		c.Error(errors.New("Unable to update a post"))
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
@@ -200,6 +202,7 @@ func PostsDelete(c *gin.Context) {
 
 	if result.Error != nil {
 		c.Error(errors.New("Unable to delete a post"))
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -226,6 +229,7 @@ func UsersCreate(c *gin.Context) {
 	err := c.Bind(&body)
 	if err != nil {
 		c.Error(errors.New(err.Error()))
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
@@ -233,7 +237,7 @@ func UsersCreate(c *gin.Context) {
 	result := config.DB.Create(&user)
 
 	if result.Error != nil {
-		c.Status(400)
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
@@ -256,6 +260,7 @@ func UsersShow(c *gin.Context) {
 
 	if result.Error != nil {
 		c.Error(errors.New("User not found"))
+		c.Status(http.StatusNotFound)
 		return
 	}
 
