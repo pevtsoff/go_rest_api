@@ -9,24 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Post represents a blog post
-type Post struct {
-	ID        uint    `json:"id" example:"1"`
-	CreatedAt string  `json:"created_at" example:"2023-01-01T00:00:00Z"`
-	UpdatedAt string  `json:"updated_at" example:"2023-01-01T00:00:00Z"`
-	DeletedAt *string `json:"deleted_at,omitempty" example:"null"`
-	Title     string  `json:"title" example:"My First Post"`
-	Body      string  `json:"body" example:"This is the content of my first post"`
-}
-
-// User represents a user
-type User struct {
-	ID        uint    `json:"id" example:"1"`
-	CreatedAt string  `json:"created_at" example:"2023-01-01T00:00:00Z"`
-	UpdatedAt string  `json:"updated_at" example:"2023-01-01T00:00:00Z"`
-	DeletedAt *string `json:"deleted_at,omitempty" example:"null"`
-	Name      string  `json:"name" example:"John Doe"`
-}
 
 // CreatePostRequest represents the request body for creating a post
 type CreatePostRequest struct {
@@ -47,32 +29,32 @@ type CreateUserRequest struct {
 
 // PostsResponse represents the response for posts endpoints
 type PostsResponse struct {
-	Posts []Post `json:"posts"`
+	Posts []models.JsonPost `json:"posts"`
 }
 
 // PostResponse represents the response for a single post
 type PostResponse struct {
-	Post Post `json:"post"`
+	Post models.JsonPost `json:"post"`
 }
 
 // UsersResponse represents the response for users endpoints
 type UsersResponse struct {
-	Users []User `json:"users"`
+	Users []models.JsonUser `json:"users"`
 }
 
 // UserResponse represents the response for a single user
 type UserResponse struct {
-	User User `json:"user"`
+	User models.JsonUser `json:"user"`
 }
 
 // mapPost converts DB model to API DTO
-func mapPost(m models.Post) Post {
+func mapPost(m models.Post) models.JsonPost {
 	var deletedAt *string
 	if m.DeletedAt.Valid {
 		s := m.DeletedAt.Time.Format(time.RFC3339)
 		deletedAt = &s
 	}
-	return Post{
+	return models.JsonPost{
 		ID:        m.ID,
 		CreatedAt: m.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: m.UpdatedAt.Format(time.RFC3339),
@@ -83,13 +65,13 @@ func mapPost(m models.Post) Post {
 }
 
 // mapUser converts DB model to API DTO
-func mapUser(m models.User) User {
+func mapUser(m models.User) models.JsonUser {
 	var deletedAt *string
 	if m.DeletedAt.Valid {
 		s := m.DeletedAt.Time.Format(time.RFC3339)
 		deletedAt = &s
 	}
-	return User{
+	return models.JsonUser{
 		ID:        m.ID,
 		CreatedAt: m.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: m.UpdatedAt.Format(time.RFC3339),
@@ -138,7 +120,7 @@ func PostsIndex(c *gin.Context) {
 	var posts []models.Post
 	config.DB.Find(&posts)
 
-	dto := make([]Post, 0, len(posts))
+	dto := make([]models.JsonPost, 0, len(posts))
 	for _, p := range posts {
 		dto = append(dto, mapPost(p))
 	}
