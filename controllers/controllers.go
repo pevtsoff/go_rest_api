@@ -124,10 +124,7 @@ func PostsCreate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(
-		200, gin.H{
-			"post": mapPost(post),
-		})
+	c.JSON(200, PostResponse{Post: mapPost(post)})
 }
 
 // PostsIndex godoc
@@ -141,16 +138,11 @@ func PostsIndex(c *gin.Context) {
 	var posts []models.Post
 	config.DB.Find(&posts)
 
-	c.JSON(
-		200, gin.H{
-			"posts": func() []Post {
-				dtos := make([]Post, 0, len(posts))
-				for _, p := range posts {
-					dtos = append(dtos, mapPost(p))
-				}
-				return dtos
-			}(),
-		})
+	dto := make([]Post, 0, len(posts))
+	for _, p := range posts {
+		dto = append(dto, mapPost(p))
+	}
+	c.JSON(200, PostsResponse{Posts: dto})
 }
 
 // PostsShow godoc
@@ -172,10 +164,7 @@ func PostsShow(c *gin.Context) {
 		return
 	}
 
-	c.JSON(
-		200, gin.H{
-			"post": mapPost(post),
-		})
+	c.JSON(200, PostResponse{Post: mapPost(post)})
 }
 
 // PostsUpdate godoc
@@ -211,10 +200,7 @@ func PostsUpdate(c *gin.Context) {
 		Body:  body.Body,
 	})
 
-	c.JSON(
-		200, gin.H{
-			"post": mapPost(post),
-		})
+	c.JSON(200, PostResponse{Post: mapPost(post)})
 }
 
 // PostsDelete godoc
@@ -269,10 +255,7 @@ func UsersCreate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(
-		200, gin.H{
-			"user": mapUser(user),
-		})
+	c.JSON(200, UserResponse{User: mapUser(user)})
 }
 
 // UsersShow godoc
@@ -294,8 +277,5 @@ func UsersShow(c *gin.Context) {
 		return
 	}
 
-	c.JSON(
-		200, gin.H{
-			"user": mapUser(user),
-		})
+	c.JSON(200, UserResponse{User: mapUser(user)})
 }
