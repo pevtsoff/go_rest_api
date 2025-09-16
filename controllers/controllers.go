@@ -94,7 +94,8 @@ func PostsCreate(c *gin.Context) {
 	var body CreatePostRequest
 	err := c.Bind(&body)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.Error(errors.New(err.Error()))
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
@@ -102,7 +103,8 @@ func PostsCreate(c *gin.Context) {
 	result := config.DB.Create(&post)
 
 	if result.Error != nil {
-		c.Status(400)
+		c.Error(result.Error)
+		c.Status(http.StatusBadRequest)
 		return
 	}
 

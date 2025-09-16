@@ -7,6 +7,7 @@ import (
 	"os"
 	"rest_api/config"
 	"rest_api/controllers"
+	errors_middleware "rest_api/middleware"
 	"rest_api/models"
 
 	"github.com/gin-gonic/gin"
@@ -29,17 +30,6 @@ func init() {
 	log.Println("Database migration completed successfully!")
 }
 
-func JSONErrorMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-		if len(c.Errors) > 0 {
-			c.AbortWithStatusJSON(c.Writer.Status(), gin.H{
-				"error": c.Errors[0].Error(),
-			})
-		}
-	}
-}
-
 // @title REST API
 // @version 1.0
 // @description A simple REST API for managing posts and users
@@ -57,7 +47,7 @@ func JSONErrorMiddleware() gin.HandlerFunc {
 func main() {
 	logger.Println("hello world")
 	engine := gin.Default()
-	engine.Use(JSONErrorMiddleware())
+	engine.Use(errors_middleware.JSONErrorMiddleware())
 
 	// Generate Swagger JSON at startup from annotations (no local docs folder)
 	swaggerJSON, genErr := generateSwaggerJSON()
