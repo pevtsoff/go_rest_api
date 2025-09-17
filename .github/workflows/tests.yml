@@ -1,0 +1,85 @@
+name: Go Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [ master ]
+    types: [ closed ]
+
+jobs:
+  test:
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 6
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Download dependencies
+        run: |
+          go mod download
+
+      - name: Load .env (populate POSTGRES_* for tests)
+        shell: bash
+        run: |
+          set -a
+          if [ -f .env ]; then . ./.env; fi
+          set +a
+          {
+            echo "POSTGRES_USER=${POSTGRES_USER:-postgres}"
+            echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}"
+            echo "POSTGRES_DB=${POSTGRES_DB:-test}"
+          } >> $GITHUB_ENV
+
+      - name: Run tests
+        env:
+          DB_CONNECTION_STRING: host=127.0.0.1 user=${{ env.POSTGRES_USER }} password=${{ env.POSTGRES_PASSWORD }} dbname=${{ env.POSTGRES_DB }} port=5432 sslmode=disable TimeZone=UTC
+        run: |
+          # Build coverpkg from all non-test packages
+          PKGS=$(go list ./... | grep -v '/tests')
+          COVERPKG=$(echo "$PKGS" | tr '\n' ',' | sed 's/,$//')
+          # Run only the tests in ./tests, but measure coverage for app packages
+          go test ./tests -v -covermode=atomic -coverpkg="$COVERPKG" -coverprofile=coverage.out
+
+      - name: Coverage summary
+        run: |
+          go tool cover -func=coverage.out
+
+      - name: Coverage summary (job summary)
+        run: |
+          echo '### Coverage' >> $GITHUB_STEP_SUMMARY
+          go tool cover -func=coverage.out >> $GITHUB_STEP_SUMMARY
+
+      - name: Coverage HTML report
+        run: |
+          go tool cover -html=coverage.out -o coverage.html
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            coverage.out
+            coverage.html
+
+

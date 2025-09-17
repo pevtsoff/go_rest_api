@@ -2,10 +2,7 @@ package testutils
 
 import (
 	"context"
-	_ "embed"
-	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"rest_api/config"
@@ -16,13 +13,12 @@ import (
 
 // ConfigureTestDB sets environment and connects GORM to the test Postgres DB.
 func ConfigureTestDB() *gorm.DB {
-	// Allow override via env in CI; otherwise default to local docker compose
-	dsn := os.Getenv("DB_CONNECTION_STRING")
-	if dsn == "" {
-		dsn = "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=UTC"
-		os.Setenv("DB_CONNECTION_STRING", dsn)
+	// Rely on environment variables; provide a sane default for test DB
+	if os.Getenv("DB_CONNECTION_STRING") == "" {
+		_ = os.Setenv("DB_CONNECTION_STRING", "host=localhost user=postgres password=postgres dbname=test port=5432 sslmode=disable TimeZone=UTC")
 	}
 
+	dsn := os.Getenv("DB_CONNECTION_STRING")
 	// Reuse existing connect logic from app
 	config.ConnectToDB()
 	// Ensure schema exists
@@ -31,41 +27,6 @@ func ConfigureTestDB() *gorm.DB {
 	waitForPostgres(dsn)
 
 	return config.DB
-}
-
-// BeginTxWithSeeds starts a DB transaction, loads seed data into it, and swaps
-// the global config.DB to point to this transaction for the duration of a test.
-// The returned cleanup must be deferred to rollback the transaction and restore
-// the original global DB.
-func BeginTxWithSeeds() (func(), error) {
-	db := ConfigureTestDB()
-	tx := db.Begin()
-	if tx.Error != nil {
-		return nil, tx.Error
-	}
-
-	// Run seeds inside the transaction
-	statements := splitSQLStatements(seedSQL)
-	for _, stmt := range statements {
-		if strings.TrimSpace(stmt) == "" {
-			continue
-		}
-		if err := tx.Exec(stmt).Error; err != nil {
-			_ = tx.Rollback()
-			return nil, fmt.Errorf("seed exec error: %w (stmt: %s)", err, stmt)
-		}
-	}
-
-	// Swap global DB to use the transaction
-	original := config.DB
-	config.DB = tx
-
-	cleanup := func() {
-		_ = tx.Rollback()
-		config.DB = original
-	}
-
-	return cleanup, nil
 }
 
 // waitForPostgres tries simple connections until the DB responds or times out.
@@ -92,21 +53,27 @@ func waitForPostgres(dsn string) {
 	}
 }
 
-// ResetDatabase truncates all data and loads the tests/seeds.sql file.
-func ResetDatabase(db *gorm.DB) error { return nil }
-
-// splitSQLStatements is a naive splitter by semicolon that handles simple files.
-func splitSQLStatements(sqlText string) []string {
-	parts := strings.Split(sqlText, ";")
-	result := make([]string, 0, len(parts))
-	for _, p := range parts {
-		trimmed := strings.TrimSpace(p)
-		if trimmed != "" {
-			result = append(result, trimmed)
-		}
+// BeginTxWithSeeds starts a DB transaction and swaps the global config.DB to
+// point to this transaction for the duration of a test. No seeds are loaded.
+// The returned cleanup must be deferred to rollback the transaction and
+// restore the original global DB.
+func BeginTxWithSeeds() (func(), error) {
+	db := ConfigureTestDB()
+	tx := db.Begin()
+	if tx.Error != nil {
+		return nil, tx.Error
 	}
-	return result
+
+	original := config.DB
+	config.DB = tx
+
+	cleanup := func() {
+		_ = tx.Rollback()
+		config.DB = original
+	}
+
+	return cleanup, nil
 }
 
-//go:embed seeds.sql
-var seedSQL string
+// ResetDatabase is a no-op retained for backwards compatibility.
+func ResetDatabase(db *gorm.DB) error { return nil }

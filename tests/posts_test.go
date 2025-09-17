@@ -19,6 +19,13 @@ func TestPosts_Index_OK(t *testing.T) {
 	defer cleanup()
 
 	router := NewRouter()
+
+	// Ensure there are at least two posts
+	_, err = testutils.NewPostBuilder().WithTitle("A").WithBody("a").Create()
+	assert.NoError(t, err)
+	_, err = testutils.NewPostBuilder().WithTitle("B").WithBody("b").Create()
+	assert.NoError(t, err)
+
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/posts/", nil)
 	router.ServeHTTP(w, req)
@@ -37,8 +44,12 @@ func TestPosts_Show_Existing(t *testing.T) {
 	defer cleanup()
 
 	router := NewRouter()
+	// Build a post and then fetch by its ID
+	p, err := testutils.NewPostBuilder().WithTitle("Seeded").WithBody("From test").Create()
+	assert.NoError(t, err)
+
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/posts/1", nil)
+	req, _ := http.NewRequest("GET", "/posts/"+testutils.Itoa(p.ID), nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -46,7 +57,7 @@ func TestPosts_Show_Existing(t *testing.T) {
 		Post models.JsonPost `json:"post"`
 	}
 	assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	assert.Equal(t, uint(1), resp.Post.ID)
+	assert.Equal(t, p.ID, resp.Post.ID)
 }
 
 func TestPosts_Show_NotFound(t *testing.T) {
@@ -101,9 +112,13 @@ func TestPosts_Update_Existing(t *testing.T) {
 	defer cleanup()
 
 	router := NewRouter()
+	// Create to get a known ID
+	p, err := testutils.NewPostBuilder().WithTitle("Temp").WithBody("Temp").Create()
+	assert.NoError(t, err)
+
 	w := httptest.NewRecorder()
 	body := []byte(`{"title":"Updated","body":"Updated Body"}`)
-	req, _ := http.NewRequest("PATCH", "/posts/1", bytes.NewReader(body))
+	req, _ := http.NewRequest("PATCH", "/posts/"+testutils.Itoa(p.ID), bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -135,14 +150,18 @@ func TestPosts_Delete_Existing(t *testing.T) {
 	defer cleanup()
 
 	router := NewRouter()
+	// Create to get a known ID
+	p, err := testutils.NewPostBuilder().WithTitle("Temp").WithBody("Temp").Create()
+	assert.NoError(t, err)
+
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/posts/1", nil)
+	req, _ := http.NewRequest("DELETE", "/posts/"+testutils.Itoa(p.ID), nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	// Verify it is gone
 	w = httptest.NewRecorder()
-	req, _ = http.NewRequest("GET", "/posts/1", nil)
+	req, _ = http.NewRequest("GET", "/posts/"+testutils.Itoa(p.ID), nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }

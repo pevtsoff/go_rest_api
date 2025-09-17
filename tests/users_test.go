@@ -19,8 +19,12 @@ func TestUsers_Show_Existing(t *testing.T) {
 	defer cleanup()
 
 	router := NewRouter()
+	// Build a user and then fetch by its ID
+	u, err := testutils.NewUserBuilder().WithName("Temp").Create()
+	assert.NoError(t, err)
+
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/users/1", nil)
+	req, _ := http.NewRequest("GET", "/users/"+testutils.Itoa(u.ID), nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -28,7 +32,7 @@ func TestUsers_Show_Existing(t *testing.T) {
 		User models.JsonUser `json:"user"`
 	}
 	assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	assert.Equal(t, uint(1), resp.User.ID)
+	assert.Equal(t, u.ID, resp.User.ID)
 }
 
 func TestUsers_Show_NotFound(t *testing.T) {
