@@ -39,9 +39,21 @@ jobs:
         run: |
           go mod download
 
+      - name: Load .env (populate POSTGRES_* for tests)
+        shell: bash
+        run: |
+          set -a
+          if [ -f .env ]; then . ./.env; fi
+          set +a
+          {
+            echo "POSTGRES_USER=${POSTGRES_USER:-postgres}"
+            echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}"
+            echo "POSTGRES_DB=${POSTGRES_DB:-test}"
+          } >> $GITHUB_ENV
+
       - name: Run tests
         env:
-          DB_CONNECTION_STRING: host=127.0.0.1 user=postgres password=postgres dbname=test port=5432 sslmode=disable TimeZone=UTC
+          DB_CONNECTION_STRING: host=127.0.0.1 user=${{ env.POSTGRES_USER }} password=${{ env.POSTGRES_PASSWORD }} dbname=${{ env.POSTGRES_DB }} port=5432 sslmode=disable TimeZone=UTC
         run: |
           # Build coverpkg from all non-test packages
           PKGS=$(go list ./... | grep -v '/tests')
