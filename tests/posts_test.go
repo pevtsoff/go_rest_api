@@ -19,6 +19,13 @@ func TestPosts_Index_OK(t *testing.T) {
 	defer cleanup()
 
 	router := NewRouter()
+
+	// Ensure there are at least two posts
+	_, err = testutils.NewPostBuilder().WithTitle("A").WithBody("a").Create()
+	assert.NoError(t, err)
+	_, err = testutils.NewPostBuilder().WithTitle("B").WithBody("b").Create()
+	assert.NoError(t, err)
+
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/posts/", nil)
 	router.ServeHTTP(w, req)
