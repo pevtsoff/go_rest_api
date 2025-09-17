@@ -20,7 +20,8 @@ func TestUsers_Show_Existing(t *testing.T) {
 
 	router := NewRouter()
 	// Build a user and then fetch by its ID
-	u, err := testutils.NewUserBuilder().WithName("Temp").Create()
+	var ub testutils.UserBuilder
+	u, err := ub.New().WithName("Temp").Create()
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()

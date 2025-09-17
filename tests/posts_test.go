@@ -21,9 +21,10 @@ func TestPosts_Index_OK(t *testing.T) {
 	router := NewRouter()
 
 	// Ensure there are at least two posts
-	_, err = testutils.NewPostBuilder().WithTitle("A").WithBody("a").Create()
+	var pb testutils.PostBuilder
+	_, err = pb.New().WithTitle("A").WithBody("a").Create()
 	assert.NoError(t, err)
-	_, err = testutils.NewPostBuilder().WithTitle("B").WithBody("b").Create()
+	_, err = pb.New().WithTitle("B").WithBody("b").Create()
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
@@ -45,7 +46,8 @@ func TestPosts_Show_Existing(t *testing.T) {
 
 	router := NewRouter()
 	// Build a post and then fetch by its ID
-	p, err := testutils.NewPostBuilder().WithTitle("Seeded").WithBody("From test").Create()
+	var pb testutils.PostBuilder
+	p, err := pb.New().WithTitle("Seeded").WithBody("From test").Create()
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
@@ -113,7 +115,8 @@ func TestPosts_Update_Existing(t *testing.T) {
 
 	router := NewRouter()
 	// Create to get a known ID
-	p, err := testutils.NewPostBuilder().WithTitle("Temp").WithBody("Temp").Create()
+	var pb testutils.PostBuilder
+	p, err := pb.New().WithTitle("Temp").WithBody("Temp").Create()
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
@@ -151,7 +154,8 @@ func TestPosts_Delete_Existing(t *testing.T) {
 
 	router := NewRouter()
 	// Create to get a known ID
-	p, err := testutils.NewPostBuilder().WithTitle("Temp").WithBody("Temp").Create()
+	var pb testutils.PostBuilder
+	p, err := pb.New().WithTitle("Temp").WithBody("Temp").Create()
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()

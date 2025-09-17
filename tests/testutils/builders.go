@@ -12,8 +12,10 @@ type UserBuilder struct {
 	name string
 }
 
-func NewUserBuilder() *UserBuilder {
-	return &UserBuilder{name: "Test User " + time.Now().UTC().Format(time.RFC3339Nano)}
+// New initializes (or re-initializes) the builder with default values.
+func (b *UserBuilder) New() *UserBuilder {
+	b.name = "Test User " + time.Now().UTC().Format(time.RFC3339Nano)
+	return b
 }
 
 func (b *UserBuilder) WithName(name string) *UserBuilder {
@@ -36,9 +38,12 @@ type PostBuilder struct {
 	body  string
 }
 
-func NewPostBuilder() *PostBuilder {
+// New initializes (or re-initializes) the builder with default values.
+func (b *PostBuilder) New() *PostBuilder {
 	ts := time.Now().UTC().Format(time.RFC3339Nano)
-	return &PostBuilder{title: "Test Title " + ts, body: "Test Body " + ts}
+	b.title = "Test Title " + ts
+	b.body = "Test Body " + ts
+	return b
 }
 
 func (b *PostBuilder) WithTitle(title string) *PostBuilder {
