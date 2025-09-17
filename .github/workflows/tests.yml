@@ -49,6 +49,11 @@ jobs:
         run: |
           go tool cover -func=coverage.out
 
+      - name: Coverage summary (job summary)
+        run: |
+          echo '### Coverage' >> $GITHUB_STEP_SUMMARY
+          go tool cover -func=coverage.out >> $GITHUB_STEP_SUMMARY
+
       - name: Coverage HTML report
         run: |
           go tool cover -html=coverage.out -o coverage.html
