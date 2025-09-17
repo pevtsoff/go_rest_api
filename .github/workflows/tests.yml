@@ -43,7 +43,11 @@ jobs:
         env:
           DB_CONNECTION_STRING: host=127.0.0.1 user=postgres password=postgres dbname=test port=5432 sslmode=disable TimeZone=UTC
         run: |
-          go test ./... -v -coverprofile=coverage.out -covermode=atomic
+          # Build coverpkg from all non-test packages
+          PKGS=$(go list ./... | grep -v '/tests')
+          COVERPKG=$(echo "$PKGS" | tr '\n' ',' | sed 's/,$//')
+          # Run only the tests in ./tests, but measure coverage for app packages
+          go test ./tests -v -covermode=atomic -coverpkg="$COVERPKG" -coverprofile=coverage.out
 
       - name: Coverage summary
         run: |
