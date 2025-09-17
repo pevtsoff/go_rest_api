@@ -41,7 +41,7 @@ jobs:
 
       - name: Run tests
         env:
-          DB_CONNECTION_STRING: host=postgres user=postgres password=postgres dbname=test port=5432 sslmode=disable TimeZone=UTC
+          DB_CONNECTION_STRING: host=127.0.0.1 user=postgres password=postgres dbname=test port=5432 sslmode=disable TimeZone=UTC
         run: |
           go test ./... -v -coverprofile=coverage.out -covermode=atomic
 
