@@ -20,11 +20,8 @@ Auto-migration runs on startup (users, posts).
 ### Option A: Without Docker Compose (Postgres in Docker)
 1) Start Postgres:
 ```bash
+export DB_CONNECTION_STRING=DB_CONNECTION_STRING=host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=UTC
 docker compose up -d postgres
-```
-
-2) Ensure `.env` is present (see above), then run the app:
-```bash
 go run ./main.go
 ```
 
@@ -35,6 +32,8 @@ The server listens on `http://localhost:3000`.
 ```env
 docker compose up -d
 ```
+
+The server listens on `http://localhost:3000`.
 
 ## API
 Swagger/OpenAPI is generated at runtime:
@@ -109,10 +108,9 @@ There are also sample HTTP files in `http/` you can use with REST clients.
 1) Start Postgres and create a `test` database (once):
 ```bash
 docker compose up -d postgres
-docker compose exec -T postgres psql -U postgres -c "CREATE DATABASE test;" || true
 ```
 
-2) Run tests (point to the test DB):
+2) Run tests directly, when DB is in docker compose:
 ```bash
 DB_CONNECTION_STRING="host=localhost user=postgres password=postgres dbname=test port=5432 sslmode=disable TimeZone=UTC" \
 go test ./... -v
@@ -125,9 +123,6 @@ go test ./tests -v -covermode=atomic -coverpkg="$(go list ./... | grep -v '/test
 go tool cover -func=coverage.out
 go tool cover -html=coverage.out -o coverage.html
 ```
-
-### Notes
-- If you see GORM "record not found" logs during not-found test cases, that is expected. To silence in tests, you can set the GORM logger to Silent in the test DB session.
 
 ## CI (GitHub Actions)
 - Workflow at `.github/workflows/tests.yml`:
