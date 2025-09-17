@@ -10,57 +10,61 @@ import (
 	"rest_api/models"
 	"rest_api/tests/testutils"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPosts_Index_OK(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/posts/", nil)
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	var resp struct {
 		Posts []models.JsonPost `json:"posts"`
 	}
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	require.GreaterOrEqual(t, len(resp.Posts), 2)
+	assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.GreaterOrEqual(t, len(resp.Posts), 2)
 }
 
 func TestPosts_Show_Existing(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/posts/1", nil)
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	var resp struct {
 		Post models.JsonPost `json:"post"`
 	}
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	require.Equal(t, uint(1), resp.Post.ID)
+	assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, uint(1), resp.Post.ID)
 }
 
 func TestPosts_Show_NotFound(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/posts/99999", nil)
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestPosts_Create_Valid(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
@@ -68,18 +72,19 @@ func TestPosts_Create_Valid(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/posts/", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	var resp struct {
 		Post models.JsonPost `json:"post"`
 	}
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	require.Equal(t, "New Title", resp.Post.Title)
+	assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, "New Title", resp.Post.Title)
 }
 
 func TestPosts_Create_BadRequest(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
@@ -87,12 +92,13 @@ func TestPosts_Create_BadRequest(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/posts/", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func TestPosts_Update_Existing(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
@@ -100,18 +106,19 @@ func TestPosts_Update_Existing(t *testing.T) {
 	req, _ := http.NewRequest("PATCH", "/posts/1", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	var resp struct {
 		Post models.JsonPost `json:"post"`
 	}
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	require.Equal(t, "Updated", resp.Post.Title)
+	assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, "Updated", resp.Post.Title)
 }
 
 func TestPosts_Update_NotFound(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
@@ -119,33 +126,35 @@ func TestPosts_Update_NotFound(t *testing.T) {
 	req, _ := http.NewRequest("PATCH", "/posts/99999", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestPosts_Delete_Existing(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/posts/1", nil)
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	// Verify it is gone
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("GET", "/posts/1", nil)
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestPosts_Delete_NotFound(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/posts/99999", nil)
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }

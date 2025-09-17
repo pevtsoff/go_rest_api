@@ -10,40 +10,43 @@ import (
 	"rest_api/models"
 	"rest_api/tests/testutils"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUsers_Show_Existing(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users/1", nil)
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	var resp struct {
 		User models.JsonUser `json:"user"`
 	}
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	require.Equal(t, uint(1), resp.User.ID)
+	assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, uint(1), resp.User.ID)
 }
 
 func TestUsers_Show_NotFound(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users/99999", nil)
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestUsers_Create_Valid(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
@@ -51,18 +54,19 @@ func TestUsers_Create_Valid(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/users/", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	var resp struct {
 		User models.JsonUser `json:"user"`
 	}
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	require.Equal(t, "Charlie", resp.User.Name)
+	assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, "Charlie", resp.User.Name)
 }
 
 func TestUsers_Create_BadRequest(t *testing.T) {
-	db := testutils.ConfigureTestDB()
-	require.NoError(t, testutils.ResetDatabase(db))
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
@@ -70,5 +74,5 @@ func TestUsers_Create_BadRequest(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/users/", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }

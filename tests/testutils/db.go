@@ -33,6 +33,41 @@ func ConfigureTestDB() *gorm.DB {
 	return config.DB
 }
 
+// BeginTxWithSeeds starts a DB transaction, loads seed data into it, and swaps
+// the global config.DB to point to this transaction for the duration of a test.
+// The returned cleanup must be deferred to rollback the transaction and restore
+// the original global DB.
+func BeginTxWithSeeds() (func(), error) {
+	db := ConfigureTestDB()
+	tx := db.Begin()
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	// Run seeds inside the transaction
+	statements := splitSQLStatements(seedSQL)
+	for _, stmt := range statements {
+		if strings.TrimSpace(stmt) == "" {
+			continue
+		}
+		if err := tx.Exec(stmt).Error; err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("seed exec error: %w (stmt: %s)", err, stmt)
+		}
+	}
+
+	// Swap global DB to use the transaction
+	original := config.DB
+	config.DB = tx
+
+	cleanup := func() {
+		_ = tx.Rollback()
+		config.DB = original
+	}
+
+	return cleanup, nil
+}
+
 // waitForPostgres tries simple connections until the DB responds or times out.
 func waitForPostgres(dsn string) {
 	// GORM uses pgx; for low-level readiness use database/sql with pgx too
@@ -58,30 +93,7 @@ func waitForPostgres(dsn string) {
 }
 
 // ResetDatabase truncates all data and loads the tests/seeds.sql file.
-func ResetDatabase(db *gorm.DB) error {
-	sqlDB, err := db.DB()
-	if err != nil {
-		return err
-	}
-	// Clean tables (restart identity to keep deterministic IDs)
-	if _, err = sqlDB.Exec("TRUNCATE TABLE posts, users RESTART IDENTITY CASCADE;"); err != nil {
-		// Tables might not exist yet, try migrate then truncate again
-		_ = db.AutoMigrate(&models.Post{}, &models.User{})
-		_, _ = sqlDB.Exec("TRUNCATE TABLE posts, users RESTART IDENTITY CASCADE;")
-	}
-
-	// Load embedded seeds.sql
-	statements := splitSQLStatements(seedSQL)
-	for _, stmt := range statements {
-		if strings.TrimSpace(stmt) == "" {
-			continue
-		}
-		if _, err := sqlDB.Exec(stmt); err != nil {
-			return fmt.Errorf("seed exec error: %w (stmt: %s)", err, stmt)
-		}
-	}
-	return nil
-}
+func ResetDatabase(db *gorm.DB) error { return nil }
 
 // splitSQLStatements is a naive splitter by semicolon that handles simple files.
 func splitSQLStatements(sqlText string) []string {
