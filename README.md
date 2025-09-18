@@ -108,6 +108,7 @@ There are also sample HTTP files in `http/` you can use with REST clients.
 1) Start Postgres and create a `test` database (once):
 ```bash
 docker compose up -d postgres
+docker compose exec -T postgres psql -U postgres -c "CREATE DATABASE test;" || true
 ```
 
 2) Run tests directly, when DB is in docker compose:
