@@ -84,10 +84,6 @@ func TestUsers_Create_BadRequest(t *testing.T) {
 }
 
 
-
-
-
-
 func TestUsersPosts_Show_Existing(t *testing.T) {
 	cleanup, err := testutils.BeginTxWithSeeds()
 	assert.NoError(t, err)
@@ -119,4 +115,19 @@ func TestUsersPosts_Show_Existing(t *testing.T) {
 	assert.NoError(t, json_body)
 	assert.Equal(t, u.ID, resp.User.ID)
 	assert.Equal(t, 5, len(resp.Posts))
+}
+
+
+func TestUsersPosts_User_Not_Found(t *testing.T) {
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	router := NewRouter()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users/"+testutils.Itoa(999999)+"/posts", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
 }
