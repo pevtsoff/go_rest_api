@@ -1,4 +1,5 @@
 package models
+
 // Post represents a blog post
 type JsonPost struct {
 	ID        uint    `json:"id" example:"1"`
@@ -7,6 +8,7 @@ type JsonPost struct {
 	DeletedAt *string `json:"deleted_at,omitempty" example:"null"`
 	Title     string  `json:"title" example:"My First Post"`
 	Body      string  `json:"body" example:"This is the content of my first post"`
+	UserID    uint    `json:"user_id" example:"1"`
 }
 
 // User represents a user

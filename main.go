@@ -22,8 +22,8 @@ func init() {
 	config.LoadEnvVars()
 	config.ConnectToDB()
 
-	// Auto-migrate the database schema
-	err := config.DB.AutoMigrate(&models.Post{}, &models.User{})
+	// Auto-migrate the database schema (ensure referenced tables first)
+	err := config.DB.AutoMigrate(&models.User{}, &models.Post{})
 	if err != nil {
 		log.Fatal("Migration failed:", err)
 	}
@@ -70,6 +70,7 @@ func main() {
 	// API routes
 	engine.POST("/users/", controllers.UsersCreate)
 	engine.GET("/users/:id", controllers.UsersShow)
+	engine.GET("/users/:id/posts", controllers.UserPostsShow)
 	engine.POST("/posts/", controllers.PostsCreate)
 	engine.GET("/posts/", controllers.PostsIndex)
 	engine.GET("/posts/:id", controllers.PostsShow)

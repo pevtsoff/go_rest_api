@@ -34,8 +34,9 @@ func (b *UserBuilder) Create() (models.User, error) {
 
 // PostBuilder helps create a Post row for tests and returns the created model.
 type PostBuilder struct {
-	title string
-	body  string
+	title  string
+	body   string
+	userID uint
 }
 
 // New initializes (or re-initializes) the builder with default values.
@@ -56,9 +57,14 @@ func (b *PostBuilder) WithBody(body string) *PostBuilder {
 	return b
 }
 
+func (b *PostBuilder) WithUserID(userID uint) *PostBuilder {
+	b.userID = userID
+	return b
+}
+
 // Create inserts the post into DB using the current config.DB (can be a tx) and returns it.
 func (b *PostBuilder) Create() (models.Post, error) {
-	p := models.Post{Title: b.title, Body: b.body}
+	p := models.Post{Title: b.title, Body: b.body, UserID: b.userID}
 	if err := config.DB.Create(&p).Error; err != nil {
 		return models.Post{}, err
 	}

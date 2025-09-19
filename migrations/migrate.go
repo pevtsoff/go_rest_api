@@ -26,8 +26,8 @@ func main() {
 	if config.DB != nil {
 		log.Println("Starting database migration...")
 
-		// Auto-migrate all your models
-		err := config.DB.AutoMigrate(&models.Post{}, &models.User{})
+		// Auto-migrate all your models (ensure referenced tables first)
+		err := config.DB.AutoMigrate(&models.User{}, &models.Post{})
 		if err != nil {
 			log.Fatal("Migration failed:", err)
 		}
