@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"rest_api/models"
@@ -80,4 +81,42 @@ func TestUsers_Create_BadRequest(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+
+
+
+
+
+func TestUsersPosts_Show_Existing(t *testing.T) {
+	cleanup, err := testutils.BeginTxWithSeeds()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	router := NewRouter()
+	// Build a user and then fetch by its ID
+	var ub testutils.UserBuilder
+	u, err := ub.New().WithName("Temp").Create()
+	assert.NoError(t, err)
+
+	// Build posts for the user
+	var pb testutils.PostBuilder
+	for i := range 5 {
+		_, err = pb.New().WithTitle("Temp"+strconv.Itoa(i)).WithBody("Temp"+strconv.Itoa(i)).WithUserID(u.ID).Create()
+		assert.NoError(t, err)
+	}
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users/"+testutils.Itoa(u.ID)+"/posts", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp struct {
+		User models.JsonUser `json:"user"`
+		Posts []models.JsonPost `json:"posts"`
+	}
+	json_body := json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.NoError(t, json_body)
+	assert.Equal(t, u.ID, resp.User.ID)
+	assert.Equal(t, 5, len(resp.Posts))
 }

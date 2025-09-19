@@ -12,19 +12,22 @@ import (
 
 // CreatePostRequest represents the request body for creating a post
 type CreatePostRequest struct {
-	Title string `json:"title" binding:"required" example:"My First Post"`
-	Body  string `json:"body" binding:"required" example:"This is the content of my first post"`
+	Title  string `json:"title" binding:"required" example:"My First Post"`
+	Body   string `json:"body" binding:"required" example:"This is the content of my first post"`
+	UserID uint   `json:"user_id" binding:"required" example:"1"`
 }
 
 // UpdatePostRequest represents the request body for updating a post
 type UpdatePostRequest struct {
-	Title string `json:"title" example:"Updated Post Title"`
-	Body  string `json:"body" example:"Updated post content"`
+	Title  string `json:"title" example:"Updated Post Title"`
+	Body   string `json:"body" example:"Updated post content"`
+	UserID *uint  `json:"user_id" example:"2"`
 }
 
 // CreateUserRequest represents the request body for creating a user
 type CreateUserRequest struct {
-	Name string `json:"name" binding:"required" example:"John Doe"`
+	Name  string              `json:"name" binding:"required" example:"John Doe"`
+	Posts []CreatePostRequest `json:"posts" example:"[{\\\"title\\\":\\\"Hello\\\",\\\"body\\\":\\\"World\\\"}]"`
 }
 
 // PostsResponse represents the response for posts endpoints
@@ -47,6 +50,11 @@ type UserResponse struct {
 	User models.JsonUser `json:"user"`
 }
 
+type UserPostsResponse struct {
+	User models.JsonUser `json:"user"`
+	Posts []models.JsonPost `json:"posts"`
+}
+
 // mapPost converts DB model to API DTO
 func mapPost(m models.Post) models.JsonPost {
 	var deletedAt *string
@@ -61,6 +69,7 @@ func mapPost(m models.Post) models.JsonPost {
 		DeletedAt: deletedAt,
 		Title:     m.Title,
 		Body:      m.Body,
+		UserID:    m.UserID,
 	}
 }
 
@@ -82,7 +91,7 @@ func mapUser(m models.User) models.JsonUser {
 
 // PostsCreate godoc
 // @Summary Create a new post
-// @Description Create a new blog post
+// @Description Create a new blog post and associate with a user via user_id
 // @Tags posts
 // @Accept json
 // @Produce json
@@ -99,7 +108,7 @@ func PostsCreate(c *gin.Context) {
 		return
 	}
 
-	post := models.Post{Title: body.Title, Body: body.Body}
+	post := models.Post{Title: body.Title, Body: body.Body, UserID: body.UserID}
 	result := config.DB.Create(&post)
 
 	if result.Error != nil {
@@ -113,7 +122,7 @@ func PostsCreate(c *gin.Context) {
 
 // PostsIndex godoc
 // @Summary Get all posts
-// @Description Get a list of all blog posts
+// @Description Get a list of all blog posts (user_id included)
 // @Tags posts
 // @Produce json
 // @Success 200 {object} PostsResponse "List of posts"
@@ -131,7 +140,7 @@ func PostsIndex(c *gin.Context) {
 
 // PostsShow godoc
 // @Summary Get a post by ID
-// @Description Get a specific blog post by its ID
+// @Description Get a specific blog post by its ID (user_id included)
 // @Tags posts
 // @Produce json
 // @Param id path int true "Post ID"
@@ -154,7 +163,7 @@ func PostsShow(c *gin.Context) {
 
 // PostsUpdate godoc
 // @Summary Update a post
-// @Description Update an existing blog post
+// @Description Update an existing blog post (title, body, and optionally user_id)
 // @Tags posts
 // @Accept json
 // @Produce json
@@ -181,10 +190,19 @@ func PostsUpdate(c *gin.Context) {
 		return
 	}
 
-	config.DB.Model(&post).Updates(models.Post{
-		Title: body.Title,
-		Body:  body.Body,
-	})
+	updates := map[string]any{}
+	if body.Title != "" {
+		updates["title"] = body.Title
+	}
+	if body.Body != "" {
+		updates["body"] = body.Body
+	}
+	if body.UserID != nil {
+		updates["user_id"] = *body.UserID
+	}
+	if len(updates) > 0 {
+		config.DB.Model(&post).Updates(updates)
+	}
 
 	c.JSON(200, PostResponse{Post: mapPost(post)})
 }
@@ -243,6 +261,19 @@ func UsersCreate(c *gin.Context) {
 		return
 	}
 
+	// Optionally create associated posts
+	if len(body.Posts) > 0 {
+		posts := make([]models.Post, 0, len(body.Posts))
+		for _, p := range body.Posts {
+			posts = append(posts, models.Post{Title: p.Title, Body: p.Body, UserID: user.ID})
+		}
+		if err := config.DB.Create(&posts).Error; err != nil {
+			c.Error(err)
+			c.Status(http.StatusBadRequest)
+			return
+		}
+	}
+
 	c.JSON(200, UserResponse{User: mapUser(user)})
 }
 
@@ -267,4 +298,37 @@ func UsersShow(c *gin.Context) {
 	}
 
 	c.JSON(200, UserResponse{User: mapUser(user)})
+}
+
+
+
+// UserPostsShow godoc
+// @Summary Get a user by ID
+// @Description Get a specific user posts by user ID
+// @Tags users
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} UserPostsResponse "User posts found"
+// @Failure 404 {object} map[string]string "User or user posts not found"
+// @Router /users/{id}/posts [get]
+func UserPostsShow(c *gin.Context) {
+	var user models.User
+	id := c.Param("id")
+	result := config.DB.First(&user, id)
+
+	if result.Error != nil {
+		c.Error(errors.New("User not found"))
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	var posts []models.Post
+	config.DB.Find(&posts, "user_id = ?", id)
+
+	userPosts := make([]models.JsonPost, 0, len(posts))
+	for _, p := range posts {
+		userPosts = append(userPosts, mapPost(p))
+	}
+
+	c.JSON(200, UserPostsResponse{User: mapUser(user), Posts: userPosts})
 }

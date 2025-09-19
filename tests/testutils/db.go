@@ -22,7 +22,7 @@ func ConfigureTestDB() *gorm.DB {
 	// Reuse existing connect logic from app
 	config.ConnectToDB()
 	// Ensure schema exists
-	_ = config.DB.AutoMigrate(&models.Post{}, &models.User{})
+	_ = config.DB.AutoMigrate(&models.User{}, &models.Post{})
 
 	waitForPostgres(dsn)
 

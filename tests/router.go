@@ -16,6 +16,7 @@ func NewRouter() *gin.Engine {
 
 	r.POST("/users/", controllers.UsersCreate)
 	r.GET("/users/:id", controllers.UsersShow)
+	r.GET("/users/:id/posts", controllers.UserPostsShow)
 	r.POST("/posts/", controllers.PostsCreate)
 	r.GET("/posts/", controllers.PostsIndex)
 	r.GET("/posts/:id", controllers.PostsShow)
