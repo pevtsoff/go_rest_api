@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"rest_api/models"
@@ -86,9 +87,15 @@ func TestPosts_Create_Valid(t *testing.T) {
 	assert.NoError(t, err)
 	defer cleanup()
 
+	//create test user
+	var ub testutils.UserBuilder
+	u, err := ub.New().WithName("Del User").Create()
+	assert.NoError(t, err)
+
 	router := NewRouter()
 	w := httptest.NewRecorder()
-	body := []byte(`{"title":"New Title","body":"New Body"}`)
+	body := []byte(`{"title":"New Title","body":"New Body","user_id":` + strconv.Itoa(int(u.ID)) + `}`)
+
 	req, _ := http.NewRequest("POST", "/posts/", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
