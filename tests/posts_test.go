@@ -1,11 +1,11 @@
 package tests
 
 import (
+	"fmt"
 	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 
 	"rest_api/models"
@@ -94,8 +94,7 @@ func TestPosts_Create_Valid(t *testing.T) {
 
 	router := NewRouter()
 	w := httptest.NewRecorder()
-	body := []byte(`{"title":"New Title","body":"New Body","user_id":` + strconv.Itoa(int(u.ID)) + `}`)
-
+    body := []byte(fmt.Sprintf(`{"title":"New Title","body":"New Body","user_id":%d}`, u.ID))
 	req, _ := http.NewRequest("POST", "/posts/", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
